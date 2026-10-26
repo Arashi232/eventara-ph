@@ -1298,7 +1298,7 @@ atmosphere.</p>
             </div>
 
             <!-- Interactive Form -->
-            <form id="proposal-form" onsubmit="handleProposalSubmit(event)" class="space-y-4">
+            <form id="proposal-request-form" onsubmit="handleProposalSubmit(event)" class="space-y-4">
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -1479,6 +1479,64 @@ atmosphere.</p>
             document.getElementById('proposal-form').classList.add('hidden');
             document.getElementById('modal-success-msg').classList.remove('hidden');
         }
+    
+        // Proposal request email routing.
+        // Note: a static HTML page cannot send email silently by itself.
+        // This opens the visitor's email app with the form details addressed to all recipients.
+        document.addEventListener('DOMContentLoaded', function () {
+            const proposalForm = document.getElementById('proposal-request-form');
+            if (!proposalForm) return;
+
+            proposalForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const recipients = [
+                    'arkieargosino@eventara-ph.com',
+                    'danmanaras@eventara-ph.com',
+                    'zaynmaglonzo@eventara-ph.com',
+                    'sales@eventara-ph.com'
+                ].join(',');
+
+                const fields = Array.from(proposalForm.querySelectorAll('input, select, textarea'))
+                    .filter(field => field.name || field.id || field.type === 'radio' || field.type === 'checkbox');
+
+                const lines = [];
+                const seenRadioGroups = new Set();
+                fields.forEach(field => {
+                    if (field.type === 'radio') {
+                        if (seenRadioGroups.has(field.name)) return;
+                        seenRadioGroups.add(field.name);
+                        const selected = proposalForm.querySelector('input[type="radio"][name="' + CSS.escape(field.name) + '"]:checked');
+                        if (selected) {
+                            const label = selected.closest('label');
+                            lines.push((field.name || 'Selection') + ': ' + (selected.value || (label ? label.innerText.trim() : 'Selected')));
+                        }
+                        return;
+                    }
+                    if (field.type === 'checkbox') {
+                        if (field.checked) {
+                            const label = field.closest('label');
+                            lines.push((field.name || field.id || 'Option') + ': ' + (field.value || (label ? label.innerText.trim() : 'Selected')));
+                        }
+                        return;
+                    }
+                    const labelEl = field.id ? proposalForm.querySelector('label[for="' + CSS.escape(field.id) + '"]') : null;
+                    const label = (labelEl ? labelEl.innerText : field.name || field.id || 'Field').trim();
+                    const value = (field.value || '').trim();
+                    if (value) lines.push(label + ': ' + value);
+                });
+
+                const subject = 'EVENTARA PH — Proposal Request';
+                const body = 'A new proposal request has been submitted through the EVENTARA PH website.\\n\\n'
+                    + lines.join('\\n')
+                    + '\\n\\nPlease follow up with the client.';
+
+                window.location.href = 'mailto:' + recipients
+                    + '?subject=' + encodeURIComponent(subject)
+                    + '&body=' + encodeURIComponent(body);
+            });
+        });
+
     </script>
 </body>
 </html>
