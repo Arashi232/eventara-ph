@@ -1303,29 +1303,29 @@ atmosphere.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-burgundy uppercase tracking-wider mb-1">Your Full Name *</label>
-                        <input type="text" required placeholder="Juan Dela Cruz" class="w-full px-4 py-2.5 rounded-xl border border-stone focus:border-burgundy focus:ring-1 focus:ring-burgundy text-xs bg-white text-charcoal outline-none">
+                        <input type="text" name="full_name" required placeholder="Juan Dela Cruz" class="w-full px-4 py-2.5 rounded-xl border border-stone focus:border-burgundy focus:ring-1 focus:ring-burgundy text-xs bg-white text-charcoal outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-burgundy uppercase tracking-wider mb-1">Company / Brand Name *</label>
-                        <input type="text" required placeholder="e.g. Acme Corp PH" class="w-full px-4 py-2.5 rounded-xl border border-stone focus:border-burgundy focus:ring-1 focus:ring-burgundy text-xs bg-white text-charcoal outline-none">
+                        <input type="text" name="company_brand" required placeholder="e.g. Acme Corp PH" class="w-full px-4 py-2.5 rounded-xl border border-stone focus:border-burgundy focus:ring-1 focus:ring-burgundy text-xs bg-white text-charcoal outline-none">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-burgundy uppercase tracking-wider mb-1">Email Address *</label>
-                        <input type="email" required placeholder="juan@company.ph" class="w-full px-4 py-2.5 rounded-xl border border-stone focus:border-burgundy focus:ring-1 focus:ring-burgundy text-xs bg-white text-charcoal outline-none">
+                        <input type="email" name="email" required placeholder="juan@company.ph" class="w-full px-4 py-2.5 rounded-xl border border-stone focus:border-burgundy focus:ring-1 focus:ring-burgundy text-xs bg-white text-charcoal outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-burgundy uppercase tracking-wider mb-1">Contact Number *</label>
-                        <input type="tel" required placeholder="+63 912 345 6789" class="w-full px-4 py-2.5 rounded-xl border border-stone focus:border-burgundy focus:ring-1 focus:ring-burgundy text-xs bg-white text-charcoal outline-none">
+                        <input type="tel" name="contact_number" required placeholder="+63 912 345 6789" class="w-full px-4 py-2.5 rounded-xl border border-stone focus:border-burgundy focus:ring-1 focus:ring-burgundy text-xs bg-white text-charcoal outline-none">
                     </div>
                 </div>
 
                 <!-- Primary Interest Dropdown -->
                 <div>
                     <label class="block text-xs font-bold text-burgundy uppercase tracking-wider mb-1">Primary Service Needed *</label>
-                    <select required class="w-full px-4 py-2.5 rounded-xl border border-stone focus:border-burgundy focus:ring-1 focus:ring-burgundy text-xs bg-white text-charcoal outline-none">
+                    <select name="primary_service" required class="w-full px-4 py-2.5 rounded-xl border border-stone focus:border-burgundy focus:ring-1 focus:ring-burgundy text-xs bg-white text-charcoal outline-none">
                         <option value="">-- Select Service Scope --</option>
                         <option value="marketing">Marketing Strategy & 360 Campaign</option>
                         <option value="social">Social Media Management & Growth</option>
@@ -1365,7 +1365,7 @@ atmosphere.</p>
                 <!-- Message / Details -->
                 <div>
                     <label class="block text-xs font-bold text-burgundy uppercase tracking-wider mb-1">Project Details & Objectives</label>
-                    <textarea rows="3" placeholder="Describe your target timelines, event dates, or specific goals..." class="w-full px-4 py-2.5 rounded-xl border border-stone focus:border-burgundy focus:ring-1 focus:ring-burgundy text-xs bg-white text-charcoal outline-none"></textarea>
+                    <textarea name="project_details" rows="3" placeholder="Describe your target timelines, event dates, or specific goals..." class="w-full px-4 py-2.5 rounded-xl border border-stone focus:border-burgundy focus:ring-1 focus:ring-burgundy text-xs bg-white text-charcoal outline-none"></textarea>
                 </div>
 
                 <!-- Submit Button -->
@@ -1467,75 +1467,70 @@ atmosphere.</p>
 
             // Reset form view
             setTimeout(() => {
-                document.getElementById('proposal-form').classList.remove('hidden');
+                document.getElementById('proposal-request-form').classList.remove('hidden');
                 document.getElementById('modal-success-msg').classList.add('hidden');
+                const submitError = document.getElementById('proposal-submit-error');
+                if (submitError) submitError.remove();
+                document.getElementById('proposal-request-form').reset();
             }, 300);
         }
 
-        // Handle Proposal Form Submission
-        function handleProposalSubmit(event) {
+        // Send proposal requests to EVENTARA PH by email using FormSubmit's AJAX endpoint.
+        // The first submission may require verifying the receiving email address with FormSubmit.
+        async function handleProposalSubmit(event) {
             event.preventDefault();
-            // Transition form to custom success message inside modal (no alert windows)
-            document.getElementById('proposal-form').classList.add('hidden');
-            document.getElementById('modal-success-msg').classList.remove('hidden');
-        }
-    
-        // Proposal request email routing.
-        // Note: a static HTML page cannot send email silently by itself.
-        // This opens the visitor's email app with the form details addressed to all recipients.
-        document.addEventListener('DOMContentLoaded', function () {
-            const proposalForm = document.getElementById('proposal-request-form');
-            if (!proposalForm) return;
 
-            proposalForm.addEventListener('submit', function (event) {
-                event.preventDefault();
+            const form = document.getElementById('proposal-request-form');
+            const submitButton = form.querySelector('button[type="submit"]');
+            const successMessage = document.getElementById('modal-success-msg');
+            const originalButtonHTML = submitButton.innerHTML;
 
-                const recipients = [
-                    'arkieargosino@eventara-ph.com',
-                    'danmanaras@eventara-ph.com',
-                    'zaynmaglonzo@eventara-ph.com',
-                    'sales@eventara-ph.com'
-                ].join(',');
+            if (!form.reportValidity()) return;
 
-                const fields = Array.from(proposalForm.querySelectorAll('input, select, textarea'))
-                    .filter(field => field.name || field.id || field.type === 'radio' || field.type === 'checkbox');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Sending...';
 
-                const lines = [];
-                const seenRadioGroups = new Set();
-                fields.forEach(field => {
-                    if (field.type === 'radio') {
-                        if (seenRadioGroups.has(field.name)) return;
-                        seenRadioGroups.add(field.name);
-                        const selected = proposalForm.querySelector('input[type="radio"][name="' + CSS.escape(field.name) + '"]:checked');
-                        if (selected) {
-                            const label = selected.closest('label');
-                            lines.push((field.name || 'Selection') + ': ' + (selected.value || (label ? label.innerText.trim() : 'Selected')));
-                        }
-                        return;
-                    }
-                    if (field.type === 'checkbox') {
-                        if (field.checked) {
-                            const label = field.closest('label');
-                            lines.push((field.name || field.id || 'Option') + ': ' + (field.value || (label ? label.innerText.trim() : 'Selected')));
-                        }
-                        return;
-                    }
-                    const labelEl = field.id ? proposalForm.querySelector('label[for="' + CSS.escape(field.id) + '"]') : null;
-                    const label = (labelEl ? labelEl.innerText : field.name || field.id || 'Field').trim();
-                    const value = (field.value || '').trim();
-                    if (value) lines.push(label + ': ' + value);
+            const formData = new FormData(form);
+            const payload = Object.fromEntries(formData.entries());
+
+            // Send to sales@eventara-ph.com and CC the other requested recipients.
+            payload._subject = 'EVENTARA PH — Proposal Request';
+            payload._cc = 'zaynmaglonzo@eventara-ph.com,danmanaras@eventara-ph.com,arkieargosino@eventara-ph.com';
+            payload._template = 'table';
+
+            try {
+                const response = await fetch('https://formsubmit.co/ajax/sales@eventara-ph.com', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
                 });
 
-                const subject = 'EVENTARA PH — Proposal Request';
-                const body = 'A new proposal request has been submitted through the EVENTARA PH website.\\n\\n'
-                    + lines.join('\\n')
-                    + '\\n\\nPlease follow up with the client.';
+                const result = await response.json();
+                if (!response.ok || result.success === 'false' || result.success === false) {
+                    throw new Error(result.message || 'The email service could not accept the request.');
+                }
 
-                window.location.href = 'mailto:' + recipients
-                    + '?subject=' + encodeURIComponent(subject)
-                    + '&body=' + encodeURIComponent(body);
-            });
-        });
+                form.classList.add('hidden');
+                successMessage.classList.remove('hidden');
+            } catch (error) {
+                console.error('Proposal request submission failed:', error);
+                let errorMessage = document.getElementById('proposal-submit-error');
+                if (!errorMessage) {
+                    errorMessage = document.createElement('p');
+                    errorMessage.id = 'proposal-submit-error';
+                    errorMessage.setAttribute('role', 'alert');
+                    errorMessage.className = 'text-sm text-red-700 mt-3 text-center';
+                    form.appendChild(errorMessage);
+                }
+                errorMessage.textContent = 'Sorry, your proposal request could not be sent. Please try again, or email sales@eventara-ph.com directly.';
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonHTML;
+            }
+        }
 
     </script>
 </body>
